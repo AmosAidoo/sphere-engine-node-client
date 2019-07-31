@@ -34,13 +34,23 @@ function getCompilers(){
 *@return Promise
 */
 function createSubmission(source, compiler, input){
-	source = fs.createReadStream(source);
-	var submissionData = {
-		source: source,
-		compilerId: compiler,
-		input: input
-	};
-	return apiClient.callApi('/submissions', 'POST', null, submissionData);
+	let readStream = fs.createReadStream(source);
+	let sourceCode = "";
+	return new Promise(function(resolve,reject){
+		readStream.on('data', (chunk) => {
+				sourceCode += chunk;
+			}).on('end', () => {
+				let submissionData = {
+				source: sourceCode,
+				compilerId: compiler,
+				input: input
+			};
+			let results = apiClient.callApi('/submissions', 'POST', null, submissionData);
+			results.then((data) => {
+				resolve(data);
+			});
+		}).on('error', err => resolve(err));
+	});
 }
 
 /**
